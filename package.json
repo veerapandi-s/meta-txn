@@ -1,0 +1,19 @@
+{
+  "name": "meta-txn",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node app.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "eth-sig-util": "^3.0.1",
+    "ethereumjs-util": "^7.1.5",
+    "ethers": "^5.6.8",
+    "web3-eth-abi": "^1.7.3"
+  }
+}
