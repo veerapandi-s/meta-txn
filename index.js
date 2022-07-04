@@ -1,12 +1,11 @@
 const sigUtil = require("eth-sig-util");
 const ethUtils = require("ethereumjs-util");
 const { ethers, utils, providers, BigNumber } = require("ethers");
-const erc20ABI = require("./abi/erc20ABI.json");
+const abi = require("./abi/erc20ABI.json");
 const { init } = require("./helper/util");
-const web3Abi = require("web3-eth-abi");
 // Data
-const contractAddress = "0x0792702B0862da86df1E4D4aAb17aAd794B8FB07";
-const rpcProvider = "https://rinkeby.infura.io/v3/66b8e081633b4153b9e2600b8e607697";
+const contractAddress = "0x394022F5d20475D37d6904Cc2Df0BaE43DACa610";
+const rpcProvider = "https://rpc.sx.technology";
 const privateKey = "8b0d6db70393d2ca98e6a5c34a46503cb3b0378287eb589fd00b985f453f2720";
 
 const domainType = [
@@ -43,40 +42,16 @@ const metaTransactionType = [
     },
 ];
 
-const erc20ApproveABI = {
-    "type": "function",
-    "stateMutability": "nonpayable",
-    "outputs": [
-        {
-            "type": "bool",
-            "name": "",
-            "internalType": "bool"
-        }
-    ],
-    "name": "approve",
-    "inputs": [
-        {
-            "type": "address",
-            "name": "spender",
-            "internalType": "address"
-        },
-        {
-            "type": "uint256",
-            "name": "amount",
-            "internalType": "uint256"
-        }
-    ]
-}
-
 // Function Data
 const toAddress = "0xA90807c89BFAF388F4f60d437ecC35c8822D006b";
 const tokenValue = "10000000000000";
-const params = [toAddress,tokenValue]
+const params = [toAddress, tokenValue];
+const functionName = "approve";
 
 // Initialization
 const signer = new providers.JsonRpcProvider(rpcProvider);
 const wallet = new ethers.Wallet(privateKey, signer);
-const initResp = init(contractAddress, erc20ABI, wallet);
+const initResp = init(contractAddress, abi, wallet);
 const contractInstance = initResp.contractInstance;
 const contractInterface = initResp.contractInterface;
 
@@ -117,8 +92,8 @@ function getFunctionSignature(contractInterface, functionName, parameters) {
     }
 }
 
-const getTransactionData = async (user, nonce, abi, domainData) => {
-    const functionSignature = web3Abi.encodeFunctionCall(erc20ApproveABI, params);
+const getTransactionData = async (user, nonce, functionName, domainData) => {
+    const functionSignature = getFunctionSignature(contractInterface, functionName, params);
 
     console.log(`Function Signature is : ${functionSignature}`);
 
@@ -175,10 +150,15 @@ const estimateGasForMeta = async (functionSignature, r, s, v) => {
             v
         );
         console.log(`Gas Fee is ${gasFee}`);
+        return gasFee;
     } catch (error) {
         console.error(`Error in Estimate Gas : ${error}`);
     }
+    return null;
+}
 
+const executeMeta = async (functionSignature, r, s, v) => {
+    let user = await wallet.getAddress();
     try {
         let tx = await contractInstance.executeMetaTransaction(
             user,
@@ -188,10 +168,11 @@ const estimateGasForMeta = async (functionSignature, r, s, v) => {
             v
         );
         console.log(`TX is`, tx);
+        return tx;
     } catch (error) {
-        console.error(`Error in Sending Transaction : ${error}`,error);
-
+        console.error(`Error in Sending Transaction : ${error}`, error);
     }
+    return null;
 }
 
 const start = async () => {
@@ -200,11 +181,12 @@ const start = async () => {
     let { r, s, v, functionSignature } = await getTransactionData(
         wallet,
         nonce,
-        erc20ABI,
+        functionName,
         domainData,
         [toAddress, tokenValue]
     );
-    estimateGasForMeta(functionSignature, r, s, v);
+    const gasFee = await estimateGasForMeta(functionSignature, r, s, v);
+    // const txHash = await executeMeta(functionSignature, r, s, v);
 }
 
 start();
